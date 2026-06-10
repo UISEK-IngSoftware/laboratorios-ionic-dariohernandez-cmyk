@@ -2,9 +2,9 @@
 
 ## Información del Estudiante
 
-- **Nombre:** [Tu nombre completo aquí]
-- **Carrera:** [Tu carrera]
-- **Fecha de inicio:** [Fecha]
+- **Nombre:** Dario Hernndez
+- **Carrera:** Ingeniería en Sofware
+- **Fecha de inicio:** 09/06/2026
 
 ---
 

@@ -1,0 +1,19 @@
+.card-container {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+}
+.card ion-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
