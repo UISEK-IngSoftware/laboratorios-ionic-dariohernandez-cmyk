@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   IonPage,
   IonHeader,
@@ -8,11 +9,33 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardSubtitle,
-  IonCardContent
+  IonCardContent,
+  useIonViewWillEnter,
 } from "@ionic/react";
 import "./Tab3.css";
+import { getUserInfo } from "../services/GithubService";
+import { GithubUser } from "../interfaces/GithubUser";
 
 const Tab3: React.FC = () => {
+  const [userInfo, setUserInfo] = useState<GithubUser | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadUserInfo = async () => {
+    setLoading(true);
+    try {
+      const userData = await getUserInfo();
+      setUserInfo(userData);
+    } catch (error) {
+      console.error("Error al cargar información del usuario:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useIonViewWillEnter(() => {
+    loadUserInfo();
+  });
+
   return (
     <IonPage>
       <IonHeader>
@@ -28,22 +51,25 @@ const Tab3: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <div className="card-container">
-          <IonCard>
-            <img
-              alt="Avatar"
-              src="https://avatars.githubusercontent.com/u/499936030?v=1"
-            />
-            <IonCardHeader>
-              <IonCardTitle>Darío Hernández</IonCardTitle>
-              <IonCardSubtitle>dariohernandez</IonCardSubtitle>
-            </IonCardHeader>
-            <IonCardContent>
-              Desarrollador web con experiencia en frontend y backend.
-              <p>Apasionado por la tecnología y el código limpio.</p>
-            </IonCardContent>
-          </IonCard>
-        </div>
+        {loading || !userInfo ? (
+          <p style={{ textAlign: "center", marginTop: "2rem" }}>
+            Cargando información del usuario...
+          </p>
+        ) : (
+          <div className="card-container">
+            <IonCard>
+              <img
+                alt={userInfo.login || "Avatar"}
+                src={userInfo.avatar_url || ""}
+              />
+              <IonCardHeader>
+                {/* GithubUser type may not include `name` property; use `login` as fallback */}
+                <IonCardTitle>{('name' in userInfo && (userInfo as any).name) || userInfo.login}</IonCardTitle>
+                <IonCardSubtitle>{userInfo.login}</IonCardSubtitle>
+              </IonCardHeader>
+            </IonCard>
+          </div>
+        )}
       </IonContent>
     </IonPage>
   );

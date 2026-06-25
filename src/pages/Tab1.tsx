@@ -15,7 +15,7 @@ import { fetchRepositories } from "../services/GithubService";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 const Tab1: React.FC = () => {
-  const [repos, setRepos] = React.useState<Repository[]>([]);
+  const [repos, setRepos] = React.useState<Repository<any>[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
 
   const loadRepositories = async () => {
