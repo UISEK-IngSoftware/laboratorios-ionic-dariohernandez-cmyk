@@ -7,7 +7,10 @@ import {
   IonInput,
   IonTextarea,
   IonButton,
-  IonLoading
+  IonLoading,
+  IonToast,
+  useIonViewWillEnter,
+  useIonViewWillLeave,
 } from "@ionic/react";
 import "./Tab2.css";
 import { useHistory } from "react-router-dom";
@@ -18,12 +21,13 @@ import React, { useState } from "react";
 const Tab2: React.FC = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(false);
-
-
-   const [repoFormData, setRepoFormData] = useState<RepositoryPayLoad>({
+  const [repoFormData, setRepoFormData] = useState<RepositoryPayLoad>({
     name: "",
-    description: ""
+    description: "",
   });
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
 
   const setRepoName = (name: string) => {
     setRepoFormData((prev) => ({ ...prev, name }));
@@ -35,23 +39,48 @@ const Tab2: React.FC = () => {
 
   const saveRepository = async () => {
     if (repoFormData.name.trim() === "") {
-      alert("El nombre del repositorio es obligatorio.");
+      setErrorMsg("El nombre del repositorio es obligatorio.");
+      setShowToast(true);
       return;
     }
+
+    setLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
 
     try {
       const newRepo = await createRepository(repoFormData);
       if (newRepo) {
-        alert(`Repositorio "${newRepo.name}" creado exitosamente.`);
-        history.push("/tab1");
+        setSuccessMsg(`Repositorio "${newRepo.name}" creado exitosamente.`);
+        setShowToast(true);
+        setTimeout(() => history.push("/tab1"), 1500);
       } else {
-        alert("Error al crear el repositorio.");
+        setErrorMsg("Error al crear el repositorio.");
+        setShowToast(true);
       }
-    } catch (error) {
-      console.error("Error al crear el repositorio:", error);
-      alert("Error al crear el repositorio.");
+    } catch (error: any) {
+      const msg =
+        error.response?.data?.message ||
+        "Ocurrió un error inesperado al crear el repositorio.";
+      setErrorMsg(msg);
+      setShowToast(true);
+    } finally {
+      setLoading(false);
     }
   };
+
+  // 🔹 Limpiar mensajes al entrar y salir de la vista
+  useIonViewWillEnter(() => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setShowToast(false);
+  });
+
+  useIonViewWillLeave(() => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setShowToast(false);
+  });
 
   return (
     <IonPage>
@@ -98,11 +127,20 @@ const Tab2: React.FC = () => {
             Guardar
           </IonButton>
         </div>
+
         <IonLoading isOpen={loading} message="Creando repositorio..." />
 
+        <IonToast
+          isOpen={showToast}
+          message={errorMsg || successMsg || ""}
+          duration={2000}
+          color={errorMsg ? "danger" : "success"}
+          onDidDismiss={() => setShowToast(false)}
+        />
       </IonContent>
     </IonPage>
   );
 };
 
 export default Tab2;
+

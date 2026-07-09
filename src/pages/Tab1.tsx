@@ -7,24 +7,31 @@ import {
   IonTitle,
   IonToolbar,
   useIonViewWillEnter,
+  IonText,
+  IonToast,
 } from "@ionic/react";
 import { Repository } from "../interfaces/Repository";
 import RepoItem from "../components/RepoItem";
-import "./Tab1.css";
-import { fetchRepositories } from "../services/GithubService";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { fetchRepositories } from "../services/GithubService";
+import "./Tab1.css";
 
 const Tab1: React.FC = () => {
   const [repos, setRepos] = React.useState<Repository<any>[]>([]);
-  const [loading, setLoading] = React.useState<boolean>(true);
+  const [loading, setLoading] = React.useState(true);
+  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+  const [showToast, setShowToast] = React.useState(false);
 
   const loadRepositories = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const reposData = await fetchRepositories();
       setRepos(reposData);
-    } catch (error) {
-      console.error("Error al cargar repositorios:", error);
+    } catch (error: any) {
+      const msg = error.message || "Error al cargar los repositorios.";
+      setErrorMsg(msg);
+      setShowToast(true);
     } finally {
       setLoading(false);
     }
@@ -51,19 +58,30 @@ const Tab1: React.FC = () => {
 
         {loading ? (
           <LoadingSpinner isOpen={loading} />
-        ) : (
+        ) : errorMsg ? (
+          <IonText color="danger">
+            <p style={{ textAlign: "center", marginTop: "2rem" }}>{errorMsg}</p>
+          </IonText>
+        ) : repos.length > 0 ? (
           <IonList>
-            {repos.length > 0 ? (
-              repos.map((repo) => (
-                <RepoItem key={repo.id} repository={repo} />
-              ))
-            ) : (
-              <p style={{ textAlign: "center", marginTop: "2rem" }}>
-                No se encontraron repositorios.
-              </p>
-            )}
+            {repos.map((repo) => (
+              <RepoItem key={repo.id} repository={repo} />
+            ))}
           </IonList>
+        ) : (
+          <p style={{ textAlign: "center", marginTop: "2rem" }}>
+            No se encontraron repositorios.
+          </p>
         )}
+
+        {/* 🔹 Toast para errores */}
+        <IonToast
+          isOpen={showToast}
+          message={errorMsg || ""}
+          duration={2000}
+          color="danger"
+          onDidDismiss={() => setShowToast(false)}
+        />
       </IonContent>
     </IonPage>
   );

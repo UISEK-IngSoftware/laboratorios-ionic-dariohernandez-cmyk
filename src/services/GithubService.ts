@@ -1,56 +1,71 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { Repository } from "../interfaces/Repository";
 import { GithubUser } from "../interfaces/GithubUser";
+import AuthService from "./AuthService";
 
 const GITHUB_API_URL = "https://api.github.com";
-const GITHUB_API_TOKEN = import.meta.env.VITE_GITHUB_API_TOKEN; // 
-export const fetchRepositories = async (): Promise<Repository<any>[]> => {
+
+const githubApiClient = axios.create({
+  baseURL: GITHUB_API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// 🔹 Interceptor para añadir el token en cada request
+githubApiClient.interceptors.request.use((config) => {
+  config.headers.Authorization = AuthService.getAuthHeader();
+  return config;
+});
+
+// 🔹 Manejo centralizado de errores en español
+const manejarError = (error: unknown, contexto: string) => {
+  if (axios.isAxiosError(error)) {
+    const err = error as AxiosError;
+    console.error(`${contexto}:`, err.response?.data || err.message);
+  } else {
+    console.error(`${contexto}:`, error);
+  }
+};
+
+export const fetchRepositories = async (): Promise<Repository[]> => {
   try {
-    const response = await axios.get(`${GITHUB_API_URL}/user/repos`, {
-      headers: {
-        Authorization: `Bearer ${GITHUB_API_TOKEN}`,
-      },
+    const response = await githubApiClient.get<Repository[]>("/user/repos", {
       params: {
         per_page: 100,
         sort: "created",
         direction: "desc",
         affiliation: "owner",
-        t: Date.now(), // Add a timestamp to prevent caching  
       },
     });
-    return response.data as Repository<any>[];
+    return response.data;
   } catch (error) {
-    console.error("Error fetching repositories:", error);
+    manejarError(error, "Error al obtener repositorios");
     return [];
   }
 };
 
 export const createRepository = async (
-  repository: Partial<Repository<any>> = {}
-): Promise<Repository<any> | null> => {
+  repository: Partial<Repository>
+): Promise<Repository | null> => {
   try {
-    const response = await axios.post(`${GITHUB_API_URL}/user/repos`, repository, {
-      headers: {
-        Authorization: `Bearer ${GITHUB_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data as Repository<any>;
+    const response = await githubApiClient.post<Repository>(
+      "/user/repos",
+      repository
+    );
+    return response.data;
   } catch (error) {
-    console.error("Error creating repository:", error);
+    manejarError(error, "Error al crear el repositorio");
     return null;
   }
 };
+
 export const getUserInfo = async (): Promise<GithubUser | null> => {
   try {
-    const response = await axios.get(`${GITHUB_API_URL}/user`, {
-      headers: {
-        Authorization: `Bearer ${GITHUB_API_TOKEN}`,
-      },
-    });
-    return response.data as GithubUser;
+    const response = await githubApiClient.get<GithubUser>("/user");
+    return response.data;
   } catch (error) {
-    console.error("Error obteniendo información del usuario:", error);
+    manejarError(error, "Error al obtener información del usuario");
     return null;
   }
 };
